@@ -8,4 +8,4 @@ Homestead.yaml
 .env
 .phpunit.result.cache
 .composer.lock
-.code-workspace
+lumen-8-backend.code-workspace
