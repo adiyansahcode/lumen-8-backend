@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Psr\Http\Message\ServerRequestInterface;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Psr\Http\Message\ServerRequestInterface;
+use App\Http\Controllers\BaseController;
 use App\Models\Book;
 use App\Transformers\BookTransformer;
 
-class BookController extends Controller
+class BookController extends BaseController
 {
     public function index(ServerRequestInterface $request): JsonResponse
     {
@@ -70,6 +71,7 @@ class BookController extends Controller
 
         // * Begin query
         $dataDbs = new Book();
+        $dataDbsReverse = new Book();
 
         // * check include param
         if (isset($requestData['include']) && !empty($requestData['include'])) {
@@ -89,22 +91,27 @@ class BookController extends Controller
                     if (strpos($sortValue, '-') !== false) {
                         $sort = Str::snake(str_replace("-", " ", $sortValue));
                         $dataDbs = $dataDbs->orderBy($sort, 'desc');
+                        $dataDbsReverse = $dataDbsReverse->orderBy($sort, 'asc');
                     } else {
                         $sort = Str::snake($sortValue);
                         $dataDbs = $dataDbs->orderBy($sort, 'asc');
+                        $dataDbsReverse = $dataDbsReverse->orderBy($sort, 'desc');
                     }
                 }
             } else {
                 if (strpos($sort, '-') !== false) {
                     $sort = Str::snake(str_replace("-", " ", $sort));
                     $dataDbs = $dataDbs->orderBy($sort, 'desc');
+                    $dataDbsReverse = $dataDbsReverse->orderBy($sort, 'asc');
                 } else {
                     $sort = Str::snake($sort);
                     $dataDbs = $dataDbs->orderBy($sort, 'asc');
+                    $dataDbsReverse = $dataDbsReverse->orderBy($sort, 'desc');
                 }
             }
         } else {
             $dataDbs = $dataDbs->orderBy('created_at', 'desc');
+            $dataDbsReverse = $dataDbsReverse->orderBy('created_at', 'asc');
         }
 
         // pagination
@@ -154,6 +161,7 @@ class BookController extends Controller
                 // setting pagination with sorting
                 $cursorParam = [];
                 $cursorOperator = null;
+                $cursorOperatorPrev = null;
                 if (isset($requestData['sort']) && !empty($requestData['sort'])) {
                     $sort = $requestData['sort'];
                     if (strpos($sort, ',') !== false) {
@@ -163,13 +171,15 @@ class BookController extends Controller
                                 $sort = Str::snake(str_replace("-", " ", $sortValue));
                                 array_push($cursorParam, $sort);
                                 if (empty($cursorOperator)) {
-                                    $cursorOperator = '<';
+                                    $cursorOperator = '<=';
+                                    $cursorOperatorPrev = '>=';
                                 }
                             } else {
                                 $sort = Str::snake($sortValue);
                                 array_push($cursorParam, $sort);
                                 if (empty($cursorOperator)) {
-                                    $cursorOperator = '>';
+                                    $cursorOperator = '>=';
+                                    $cursorOperatorPrev = '<=';
                                 }
                             }
                         }
@@ -177,24 +187,39 @@ class BookController extends Controller
                         if (strpos($sort, '-') !== false) {
                             $sort = Str::snake(str_replace("-", " ", $sort));
                             array_push($cursorParam, $sort);
-                            $cursorOperator = '<';
+                            $cursorOperator = '<=';
+                            $cursorOperatorPrev = '>=';
                         } else {
                             $sort = Str::snake($sort);
                             array_push($cursorParam, $sort);
-                            $cursorOperator = '>';
+                            $cursorOperator = '>=';
+                            $cursorOperatorPrev = '<=';
                         }
                     }
                 } else {
                     array_push($cursorParam, 'created_at');
-                    $cursorOperator = '<';
+                    $cursorOperator = '<=';
+                    $cursorOperatorPrev = '>=';
                 }
 
+                // pagination setting
                 $cursorCurrentArray = [];
                 foreach ($cursorParam as $cursorParamValue) {
                     $cursorCurrentArray[] = $dataDbCurrentCursor->{$cursorParamValue};
                 }
                 $cursorColumn = implode(", ", $cursorParam);
                 $cursorCurrent = "'" . implode("', '", $cursorCurrentArray) . "'";
+
+                // set db pagination prev
+                $previousCursor = null;
+                $dataDbsPrev = $dataDbsReverse
+                    ->whereRaw("($cursorColumn) $cursorOperatorPrev ($cursorCurrent)")
+                    ->limit($pageLimit)
+                    ->get();
+                    // var_dump($dataDbsPrev);
+                if ($dataDbsPrev->count() > 0) {
+                    $previousCursor = $dataDbsPrev->last()->uuid;
+                }
 
                 // set db pagination
                 $dataDbs = $dataDbs
@@ -204,7 +229,7 @@ class BookController extends Controller
 
                 $dataCursors = [
                     'current' => $currentCursor,
-                    'previous' => $dataDbs->first()->uuid,
+                    'previous' => $previousCursor,
                     'next' => $dataDbs->last()->uuid,
                     'count' => $pageLimit,
                     'total' => $totalCursor,
@@ -281,8 +306,8 @@ class BookController extends Controller
                     ->get();
 
                 $dataCursors = [
-                    'current' => $currentCursor,
-                    'previous' => $dataDbs->first()->uuid,
+                    'current' => $dataDbs->first()->uuid,
+                    'previous' => null,
                     'next' => $dataDbs->last()->uuid,
                     'count' => $pageLimit,
                     'total' => $totalCursor,

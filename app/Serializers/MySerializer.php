@@ -6,6 +6,7 @@ namespace App\Serializers;
 
 use League\Fractal\Serializer\JsonApiSerializer;
 use League\Fractal\Pagination\PaginatorInterface;
+use League\Fractal\Pagination\CursorInterface;
 
 class MySerializer extends JsonApiSerializer
 {
@@ -45,5 +46,24 @@ class MySerializer extends JsonApiSerializer
         $pagination['links']['last'] = $paginator->getUrl($lastPage);
 
         return ['pagination' => $pagination];
+    }
+
+    /**
+     * Serialize the cursor.
+     *
+     * @param CursorInterface $cursor
+     *
+     * @return array
+     */
+    public function cursor(CursorInterface $cursor)
+    {
+        $cursor = [
+            'current' => $cursor->getCurrent(),
+            'prev' => $cursor->getPrev(),
+            'next' => $cursor->getNext(),
+            'count' => (int) $cursor->getCount(),
+        ];
+
+        return ['cursor' => $cursor];
     }
 }

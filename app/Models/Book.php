@@ -51,27 +51,27 @@ class Book extends \App\Models\BaseModel
         'category_id',
     ];
 
-    public function bookImg()
+    public function bookImg(): object
     {
         return $this->hasMany('App\Models\BookImg', 'book_id');
     }
 
-    public function publisher()
+    public function publisher(): object
     {
-        return $this->belongsTo('App\Models\Publisher', 'publisher_id')->withDefault(['name' => '']);
+        return $this->belongsTo('App\Models\Publisher', 'publisher_id');
     }
 
-    public function language()
+    public function language(): object
     {
-        return $this->belongsTo('App\Models\Language', 'language_id')->withDefault(['name' => '']);
+        return $this->belongsTo('App\Models\Language', 'language_id');
     }
 
-    public function category()
+    public function category(): object
     {
-        return $this->belongsTo('App\Models\Category', 'category_id')->withDefault(['name' => '']);
+        return $this->belongsTo('App\Models\Category', 'category_id');
     }
 
-    public function author()
+    public function author(): object
     {
         return $this->belongsToMany('App\Models\Author', 'book_author', 'book_id', 'author_id');
     }

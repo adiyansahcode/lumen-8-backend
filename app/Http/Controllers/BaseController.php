@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use Laravel\Lumen\Routing\Controller as BaseController;
+use Laravel\Lumen\Routing\Controller;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator as EloquentPaginator;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ use League\Fractal\Resource\Item;
 use League\Fractal\Serializer\JsonApiSerializer;
 use App\Serializers\MySerializer;
 
-class Controller extends BaseController
+class BaseController extends Controller
 {
     private function getFractalManager(): object
     {
@@ -64,17 +64,48 @@ class Controller extends BaseController
         return $manager->createData($resource)->toArray();
     }
 
-    public function cursorPaginate(EloquentCollection $data, object $transformer, object $dataCursors): array
+    public function cursorPaginate(EloquentCollection $data, object $transformer, object $dataCursors)
     {
+        $request = request();
+        $baseUrl = config('app.url');
         $manager = $this->getFractalManager();
         $dataCursor = new Cursor(
             $dataCursors->current,
             $dataCursors->previous,
             $dataCursors->next,
-            $dataCursors->total
+            $dataCursors->count
         );
         $resource = new Collection($data, $transformer, $transformer->type);
         $resource->setCursor($dataCursor);
-        return $manager->createData($resource)->toArray();
+        $result = $manager->createData($resource)->toArray();
+
+        $path = $request->path();
+        $querySelf = http_build_query($request->query());
+        $queryFirst = http_build_query($request->except(['page.after','page.before']));
+
+        $linksPrev = null;
+        if ($dataCursors->previous) {
+            $link = [ "page" => [ "after" => $dataCursors->previous]];
+            $linksPrev = $baseUrl . '/' . $path . '?';
+            $linksPrev .= http_build_query($request->except(['page.after','page.before']));
+            $linksPrev .= '&' . http_build_query($link);
+        }
+
+        $linksNext = null;
+        if ($dataCursors->next) {
+            $link = [ "page" => [ "after" => $dataCursors->next]];
+            $linksNext = $baseUrl . '/' . $path . '?';
+            $linksNext .= http_build_query($request->except(['page.after','page.before']));
+            $linksNext .= '&' . http_build_query($link);
+        }
+
+        $result["links"] = [];
+        $result['links']['self'] = $baseUrl . '/' . $path . '?' . $querySelf;
+        $result['links']['first'] = $baseUrl . '/' . $path . '?' . $queryFirst;
+        $result['links']['prev'] = $linksPrev;
+        $result['links']['next'] = $linksNext;
+        $result['links']['last'] = null;
+
+        return $result;
     }
 }
