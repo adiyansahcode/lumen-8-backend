@@ -5,11 +5,6 @@ declare(strict_types=1);
 namespace App\Transformers;
 
 use League\Fractal\TransformerAbstract;
-use App\Transformers\AuthorTransformer;
-use App\Transformers\BookImgTransformer;
-use App\Transformers\CategoryTransformer;
-use App\Transformers\LanguageTransformer;
-use App\Transformers\PublisherTransformer;
 use App\Models\Book;
 
 class BookTransformer extends TransformerAbstract

@@ -64,7 +64,7 @@ class BaseController extends Controller
         return $manager->createData($resource)->toArray();
     }
 
-    public function cursorPaginate(EloquentCollection $data, object $transformer, object $dataCursors)
+    public function cursorPaginate(EloquentCollection $data, object $transformer, object $dataCursors): array
     {
         $request = request();
         $baseUrl = config('app.url');

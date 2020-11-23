@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Transformers;
 
 use League\Fractal\TransformerAbstract;
-use App\Transformers\BookTransformer;
 use App\Models\BookImg;
 
 class BookImgTransformer extends TransformerAbstract
@@ -13,14 +12,14 @@ class BookImgTransformer extends TransformerAbstract
     public $type = 'bookImg';
 
     protected $availableIncludes = [
-        'book'
+        'book',
     ];
 
     /**
      * @param App\Models\BookImg $data
      * @return array
      */
-    public function transform(BookImg $data)
+    public function transform(BookImg $data): array
     {
         return [
             'id' => $data->id,
@@ -36,7 +35,7 @@ class BookImgTransformer extends TransformerAbstract
      * @param App\Models\Author $data
      * @return array
      */
-    public function includeBook(BookImg $data)
+    public function includeBook(BookImg $data): object
     {
         return $this->collection($data->book, new BookTransformer(), 'book');
     }

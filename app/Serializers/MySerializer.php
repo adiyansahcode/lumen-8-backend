@@ -17,7 +17,7 @@ class MySerializer extends JsonApiSerializer
      *
      * @return array
      */
-    public function paginator(PaginatorInterface $paginator)
+    public function paginator(PaginatorInterface $paginator): array
     {
         $currentPage = (int)$paginator->getCurrentPage();
         $lastPage = (int)$paginator->getLastPage();
@@ -55,7 +55,7 @@ class MySerializer extends JsonApiSerializer
      *
      * @return array
      */
-    public function cursor(CursorInterface $cursor)
+    public function cursor(CursorInterface $cursor): array
     {
         $cursor = [
             'current' => $cursor->getCurrent(),

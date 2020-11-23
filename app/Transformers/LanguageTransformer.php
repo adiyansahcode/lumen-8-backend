@@ -5,7 +5,6 @@
 namespace App\Transformers;
 
 use League\Fractal\TransformerAbstract;
-use App\Transformers\BookTransformer;
 use App\Models\Language;
 
 class LanguageTransformer extends TransformerAbstract
@@ -13,14 +12,14 @@ class LanguageTransformer extends TransformerAbstract
     public $type = 'language';
 
     protected $availableIncludes = [
-        'book'
+        'book',
     ];
 
     /**
      * @param App\Models\Language $data
      * @return array
      */
-    public function transform(Language $data)
+    public function transform(Language $data): array
     {
         return [
             'id' => (string) $data->id,
@@ -37,7 +36,7 @@ class LanguageTransformer extends TransformerAbstract
      * @param App\Models\Language $data
      * @return array
      */
-    public function includeBook(Language $data)
+    public function includeBook(Language $data): object
     {
         return $this->collection($data->book, new BookTransformer(), 'book');
     }

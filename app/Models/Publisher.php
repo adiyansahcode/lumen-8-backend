@@ -6,7 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Publisher extends \App\Models\BaseModel
+class Publisher extends BaseModel
 {
     use HasFactory;
 
@@ -43,7 +43,7 @@ class Publisher extends \App\Models\BaseModel
         'city',
     ];
 
-    public function book()
+    public function book(): object
     {
         return $this->hasMany('App\Models\Book', 'publisher_id');
     }

@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-class BookImg extends \App\Models\BaseModel
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class BookImg extends BaseModel
 {
+    use HasFactory;
+
     /**
      * The table associated with the model.
      *
@@ -38,7 +42,7 @@ class BookImg extends \App\Models\BaseModel
         'book_id',
     ];
 
-    public function book()
+    public function book(): object
     {
         return $this->belongsTo('App\Models\Book', 'id');
     }

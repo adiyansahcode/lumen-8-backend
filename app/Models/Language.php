@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-class Language extends \App\Models\BaseModel
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class Language extends BaseModel
 {
+    use HasFactory;
+
     /**
      * The table associated with the model.
      *
@@ -37,7 +41,7 @@ class Language extends \App\Models\BaseModel
         'description',
     ];
 
-    public function book()
+    public function book(): object
     {
         return $this->hasMany('App\Models\Book', 'language_id');
     }

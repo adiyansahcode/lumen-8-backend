@@ -6,7 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Category extends \App\Models\BaseModel
+class Category extends BaseModel
 {
     use HasFactory;
 
@@ -43,13 +43,13 @@ class Category extends \App\Models\BaseModel
         'category_parent_id',
     ];
 
-    public function book()
+    public function book(): object
     {
         return $this->hasMany('App\Models\Book', 'category_id');
     }
 
 
-    public function parentCategory()
+    public function parentCategory(): object
     {
         return $this->hasMany('App\Models\Category', 'category_parent_id');
     }

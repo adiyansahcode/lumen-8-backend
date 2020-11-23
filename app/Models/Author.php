@@ -6,7 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Author extends \App\Models\BaseModel
+class Author extends BaseModel
 {
     use HasFactory;
 
@@ -42,7 +42,7 @@ class Author extends \App\Models\BaseModel
         'description',
     ];
 
-    public function book()
+    public function book(): object
     {
         return $this->belongsToMany('App\Models\Book', 'book_author', 'author_id', 'book_id');
     }

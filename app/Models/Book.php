@@ -6,7 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Book extends \App\Models\BaseModel
+class Book extends BaseModel
 {
     use HasFactory;
 

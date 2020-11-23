@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-class BookAuthor extends \App\Models\BaseModel
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class BookAuthor extends BaseModel
 {
+    use HasFactory;
+
     /**
      * The table associated with the model.
      *
