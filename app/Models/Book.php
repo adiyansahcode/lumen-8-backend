@@ -51,6 +51,19 @@ class Book extends BaseModel
         'category_id',
     ];
 
+    /**
+     * The attributes for sorting API.
+     *
+     * @var array
+     */
+    public $sortable = [
+        'created_at',
+        'updated_at',
+        'isbn',
+        'title',
+        'publication_date',
+    ];
+
     public function bookImg(): object
     {
         return $this->hasMany('App\Models\BookImg', 'book_id');
