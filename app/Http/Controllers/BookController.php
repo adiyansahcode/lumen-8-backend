@@ -54,7 +54,7 @@ class BookController extends BaseController
         $data = new $this->model();
         $data = $this->hasSort($data);
         $data = $this->hasInclude($data);
-        // $data = $this->hasFilter($data);
+        $data = $this->hasFilter($data);
         $data = $this->hasResponse($data);
 
         // dump query sql

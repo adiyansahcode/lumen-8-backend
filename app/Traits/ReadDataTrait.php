@@ -17,21 +17,42 @@ trait ReadDataTrait
         $request = request();
         if (!empty($request->query('sort'))) {
             $sortData = request()->query('sort');
-            $sortArray = explode(",", $sortData);
+            $sortArray = Str::of($sortData)->explode(',');
             foreach ($sortArray as $sortValue) {
-                if (strpos($sortValue, '-') !== false) {
-                    $sort = Str::snake(str_replace("-", " ", $sortValue));
-                    if ($reverse === false) {
-                        $data = $data->orderBy($sort, 'desc');
+                if (strpos($sortValue, '.') !== false) {
+                    $sortArray2 = Str::of($sortValue)->explode('.');
+                    $sortTable = $sortArray2[0];
+                    $sortColumn = $sortArray2[1];
+                    if (strpos($sortColumn, '-') !== false) {
+                        $sort = Str::snake(str_replace('-', ' ', $sortColumn));
+                        if ($reverse === false) {
+                            $data = $data->orderBy($sortTable . '.' . $sort, 'desc');
+                        } else {
+                            $data = $data->orderBy($sortTable . '.' . $sort, 'asc');
+                        }
                     } else {
-                        $data = $data->orderBy($sort, 'asc');
+                        $sort = Str::snake($sortColumn);
+                        if ($reverse === false) {
+                            $data = $data->orderBy($sortTable . '.' . $sort, 'asc');
+                        } else {
+                            $data = $data->orderBy($sortTable . '.' . $sort, 'desc');
+                        }
                     }
                 } else {
-                    $sort = Str::snake($sortValue);
-                    if ($reverse === false) {
-                        $data = $data->orderBy($sort, 'asc');
+                    if (strpos($sortValue, '-') !== false) {
+                        $sort = Str::snake(str_replace('-', ' ', $sortValue));
+                        if ($reverse === false) {
+                            $data = $data->orderBy($sort, 'desc');
+                        } else {
+                            $data = $data->orderBy($sort, 'asc');
+                        }
                     } else {
-                        $data = $data->orderBy($sort, 'desc');
+                        $sort = Str::snake($sortValue);
+                        if ($reverse === false) {
+                            $data = $data->orderBy($sort, 'asc');
+                        } else {
+                            $data = $data->orderBy($sort, 'desc');
+                        }
                     }
                 }
             }
@@ -58,6 +79,80 @@ trait ReadDataTrait
             // foreach ($includeArray as $includeValue) {
             //     $data->load($includeValue);
             // }
+        }
+
+        return $data;
+    }
+
+    public function hasFilter(object $data): object
+    {
+        $this->validateFilter();
+
+        /*
+        Logical Operators
+        eq operator (Equals)
+        ne operator (Not Equals)
+        gt operator (Greater Than)
+        gte operator (Greater Than or Equal)
+        lt operator (Less Than)
+        lte operator (Less Than or Equal)
+        in operator (In)
+        nin operator (Not In)
+        contains function (filters if a string contains another substring)
+        */
+
+        $filterRule = [
+            'eq',
+            'ne',
+            'gt',
+            'gte',
+            'lt',
+            'lte',
+            'in',
+            'nin',
+            'contains',
+        ];
+
+        $request = request();
+        // * check include param with eager-loading
+        if (!empty($request->query('filter'))) {
+            $filter = request()->query('filter');
+            foreach ($filter as $filterKey => $filterValue) {
+                $column = Str::snake($filterKey);
+                foreach ($filterValue as $filterKey2 => $filterValue2) {
+                    $operator = $filterKey2;
+                    $value = $filterValue2;
+                    if ($operator === 'eq') {
+                        $operatorSymbol = '=';
+                        $data = $data->where($column, $operatorSymbol, $value);
+                    } elseif ($operator === 'ne') {
+                        $operatorSymbol = '!=';
+                        $data = $data->where($column, $operatorSymbol, $value);
+                    } elseif ($operator === 'gt') {
+                        $operatorSymbol = '>';
+                        $data = $data->where($column, $operatorSymbol, $value);
+                    } elseif ($operator === 'gte') {
+                        $operatorSymbol = '>=';
+                        $data = $data->where($column, $operatorSymbol, $value);
+                    } elseif ($operator === 'lt') {
+                        $operatorSymbol = '<';
+                        $data = $data->where($column, $operatorSymbol, $value);
+                    } elseif ($operator === 'lte') {
+                        $operatorSymbol = '<=';
+                        $data = $data->where($column, $operatorSymbol, $value);
+                    } elseif ($operator === 'contains') {
+                        $operatorSymbol = 'like';
+                        $value = '%' . $value . '%';
+                        $data = $data->where($column, $operatorSymbol, $value);
+                    } elseif ($operator === 'in') {
+                        $value = Str::of($value)->explode(',');
+                        $data = $data->whereIn($column, $value);
+                    } elseif ($operator === 'nin') {
+                        $value = Str::of($value)->explode(',');
+                        $data = $data->whereNotIn($column, $value);
+                    }
+                }
+            }
         }
 
         return $data;
@@ -103,10 +198,10 @@ trait ReadDataTrait
         $request = request();
         if (!empty($request->query('sort'))) {
             $sortData = request()->query('sort');
-            $sortArray = explode(",", $sortData);
+            $sortArray = explode(',', $sortData);
             foreach ($sortArray as $sortValue) {
                 if (strpos($sortValue, '-') !== false) {
-                    $sort = Str::snake(str_replace("-", " ", $sortValue));
+                    $sort = Str::snake(str_replace('-', ' ', $sortValue));
                     array_push($cursorParam, $sort);
                     if (empty($cursorOperator)) {
                         $cursorOperator = '<=';
@@ -221,7 +316,7 @@ trait ReadDataTrait
             foreach ($cursorParam as $cursorParamValue) {
                 $cursorCurrentArray[] = $dataDbCurrentCursor->{$cursorParamValue};
             }
-            $cursorColumn = implode(", ", $cursorParam);
+            $cursorColumn = implode(', ', $cursorParam);
             $cursorCurrent = "'" . implode("', '", $cursorCurrentArray) . "'";
 
             // set db pagination prev
@@ -287,7 +382,7 @@ trait ReadDataTrait
             $cursorOperator = null;
             if (!empty($request->query('sort'))) {
                 $sort = $request->query('sort');
-                $sortArray = explode(",", $sort);
+                $sortArray = explode(',', $sort);
                 foreach ($sortArray as $sortValue) {
                     if (strpos($sortValue, '-') !== false) {
                         $sort = Str::snake(str_replace("-", " ", $sortValue));
