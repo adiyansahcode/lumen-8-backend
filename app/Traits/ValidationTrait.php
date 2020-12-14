@@ -11,73 +11,6 @@ use Illuminate\Support\Str;
 
 trait ValidationTrait
 {
-    public function validateSort(): void
-    {
-        $request = request();
-
-        $validator = Validator::make($request->all(), [
-            'sort' => [
-                'string',
-                'filled',
-            ],
-        ]);
-
-        if ($validator->fails()) {
-            $errors = $validator->errors();
-            foreach ($errors->all() as $message) {
-                $errorMsg['errors'][] = [
-                    'code' => 400,
-                    'source' => ['parameter' => 'sort'],
-                    'title' => 'invalid sorting',
-                    'detail' => $message,
-                ];
-            }
-
-            $response = response()
-                ->json($errorMsg, 400)
-                ->header('Content-Type', 'application/vnd.api+json')
-                ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
-            throw new ValidationException(null, $response);
-        }
-
-        if (!empty($request->query('sort'))) {
-            $model = new $this->model();
-            $tableName = $model->getTable();
-
-            $sortColumn = $model->sortable;
-            if (empty($sortColumn)) {
-                $sortColumn = Schema::getColumnListing($tableName);
-            }
-
-            $column = [];
-            foreach ($sortColumn as $columnData) {
-                $column[] = Str::camel($columnData);
-                $column[] = '-' . Str::camel($columnData);
-                $column[] = $tableName . '.' . Str::camel($columnData);
-                $column[] = $tableName . '.' . '-' . Str::camel($columnData);
-            }
-
-            $data = request()->query('sort');
-            $dataArray = Str::of($data)->explode(',');
-            foreach ($dataArray as $dataValue) {
-                if (!in_array($dataValue, $column)) {
-                    $errorMsg['errors'][] = [
-                        'code' => 400,
-                        'source' => ['parameter' => 'sort'],
-                        'title' => 'invalid sorting',
-                        'detail' => 'sorting column not exist',
-                    ];
-                    $response = response()
-                        ->json($errorMsg, 400)
-                        ->header('Content-Type', 'application/vnd.api+json')
-                        ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
-
-                    throw new ValidationException(null, $response);
-                }
-            }
-        }
-    }
-
     public function validateInclude(): void
     {
         $request = request();
@@ -132,6 +65,84 @@ trait ValidationTrait
         }
     }
 
+    public function validateSort(): void
+    {
+        $request = request();
+
+        $validator = Validator::make($request->all(), [
+            'sort' => [
+                'string',
+                'filled',
+            ],
+        ]);
+
+        if ($validator->fails()) {
+            $errors = $validator->errors();
+            foreach ($errors->all() as $message) {
+                $errorMsg['errors'][] = [
+                    'code' => 400,
+                    'source' => ['parameter' => 'sort'],
+                    'title' => 'invalid sorting',
+                    'detail' => $message,
+                ];
+            }
+
+            $response = response()
+                ->json($errorMsg, 400)
+                ->header('Content-Type', 'application/vnd.api+json')
+                ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+            throw new ValidationException(null, $response);
+        }
+
+        if (!empty($request->query('sort'))) {
+            $model = new $this->model();
+            $tableName = $model->getTable();
+
+            $sortColumn = $model->sortable;
+            if (empty($sortColumn)) {
+                $errorMsg['errors'][] = [
+                    'code' => 400,
+                    'source' => ['parameter' => 'sort'],
+                    'title' => 'invalid sorting',
+                    'detail' => 'API does not support sorting parameter',
+                ];
+                $response = response()
+                    ->json($errorMsg, 400)
+                    ->header('Content-Type', 'application/vnd.api+json')
+                    ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
+                throw new ValidationException(null, $response);
+            }
+
+            $column = [];
+            foreach ($sortColumn as $columnData) {
+                $column[] = Str::camel($columnData);
+                $column[] = '-' . Str::camel($columnData);
+                $column[] = $tableName . '.' . Str::camel($columnData);
+                $column[] = $tableName . '.' . '-' . Str::camel($columnData);
+            }
+
+            $data = request()->query('sort');
+            $dataArray = Str::of($data)->explode(',');
+            foreach ($dataArray as $dataValue) {
+                if (!in_array($dataValue, $column)) {
+                    $errorMsg['errors'][] = [
+                        'code' => 400,
+                        'source' => ['parameter' => 'sort'],
+                        'title' => 'invalid sorting',
+                        'detail' => 'sorting column not exist',
+                    ];
+                    $response = response()
+                        ->json($errorMsg, 400)
+                        ->header('Content-Type', 'application/vnd.api+json')
+                        ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
+                    throw new ValidationException(null, $response);
+                }
+            }
+        }
+    }
+
     public function validateFilter(): void
     {
         $request = request();
@@ -166,50 +177,91 @@ trait ValidationTrait
             $model = new $this->model();
             $tableName = $model->getTable();
 
+            $filterColumn = $model->filterable;
+            if (empty($filterColumn)) {
+                $errorMsg['errors'][] = [
+                    'code' => 400,
+                    'source' => ['parameter' => 'filter'],
+                    'title' => 'invalid sorting',
+                    'detail' => 'API does not support filtering parameter',
+                ];
+                $response = response()
+                    ->json($errorMsg, 400)
+                    ->header('Content-Type', 'application/vnd.api+json')
+                    ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
+                throw new ValidationException(null, $response);
+            }
+
+            $column = [];
+            foreach ($filterColumn as $columnData) {
+                $column[] = Str::camel($columnData);
+                $column[] = $tableName . '.' . Str::camel($columnData);
+            }
+
             $data = array_keys(request()->query('filter'));
             foreach ($data as $filterName) {
-                if (strpos($filterName, '.') !== false) {
-                    $filterArray = Str::of($filterName)->explode('.');
-                    $filterTable = $filterArray[0];
-                    $filterColumn = $filterArray[1];
-                    if (Schema::hasTable($filterTable)) {
-                        if (!Schema::hasColumn($filterTable, Str::snake($filterColumn))) {
-                            $errorMsg['errors'][] = [
-                                'code' => 400,
-                                'source' => ['parameter' => 'filter'],
-                                'title' => 'invalid filtering',
-                                'detail' => 'filter column not exist',
-                            ];
-                            $response = response()
-                                ->json($errorMsg, 400)
-                                ->header('Content-Type', 'application/vnd.api+json')
-                                ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+                if (!in_array($filterName, $column)) {
+                    $errorMsg['errors'][] = [
+                        'code' => 400,
+                        'source' => ['parameter' => 'filter'],
+                        'title' => 'invalid filtering',
+                        'detail' => 'filter column not exist',
+                    ];
+                    $response = response()
+                        ->json($errorMsg, 400)
+                        ->header('Content-Type', 'application/vnd.api+json')
+                        ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
 
-                            throw new ValidationException(null, $response);
-                        }
-                    }
-                } else {
-                    if (!Schema::hasColumn($tableName, Str::snake($filterName))) {
-                        $errorMsg['errors'][] = [
-                            'code' => 400,
-                            'source' => ['parameter' => 'filter'],
-                            'title' => 'invalid filtering',
-                            'detail' => 'filter column not exist',
-                        ];
-                        $response = response()
-                            ->json($errorMsg, 400)
-                            ->header('Content-Type', 'application/vnd.api+json')
-                            ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
-
-                        throw new ValidationException(null, $response);
-                    }
+                    throw new ValidationException(null, $response);
                 }
             }
+
+            // $data = array_keys(request()->query('filter'));
+            // foreach ($data as $filterName) {
+            //     if (strpos($filterName, '.') !== false) {
+            //         $filterArray = Str::of($filterName)->explode('.');
+            //         $filterTable = $filterArray[0];
+            //         $filterColumn = $filterArray[1];
+            //         if (Schema::hasTable($filterTable)) {
+            //             if (!Schema::hasColumn($filterTable, Str::snake($filterColumn))) {
+            //                 $errorMsg['errors'][] = [
+            //                     'code' => 400,
+            //                     'source' => ['parameter' => 'filter'],
+            //                     'title' => 'invalid filtering',
+            //                     'detail' => 'filter column not exist',
+            //                 ];
+            //                 $response = response()
+            //                     ->json($errorMsg, 400)
+            //                     ->header('Content-Type', 'application/vnd.api+json')
+            //                     ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
+            //                 throw new ValidationException(null, $response);
+            //             }
+            //         }
+            //     } else {
+            //         if (!Schema::hasColumn($tableName, Str::snake($filterName))) {
+            //             $errorMsg['errors'][] = [
+            //                 'code' => 400,
+            //                 'source' => ['parameter' => 'filter'],
+            //                 'title' => 'invalid filtering',
+            //                 'detail' => 'filter column not exist',
+            //             ];
+            //             $response = response()
+            //                 ->json($errorMsg, 400)
+            //                 ->header('Content-Type', 'application/vnd.api+json')
+            //                 ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
+            //             throw new ValidationException(null, $response);
+            //         }
+            //     }
+            // }
 
             /*
             Logical Operators
             eq operator (Equals)
             ne operator (Not Equals)
+            not operator (Not Equals)
             gt operator (Greater Than)
             gte operator (Greater Than or Equal)
             lt operator (Less Than)
@@ -222,6 +274,7 @@ trait ValidationTrait
             $filterRule = [
                 'eq',
                 'ne',
+                'not',
                 'gt',
                 'gte',
                 'lt',

@@ -10,9 +10,25 @@ trait ReadDataTrait
 {
     use ValidationTrait;
 
+    public function hasInclude(object $data): object
+    {
+        $this->validateInclude();
+
+        $request = request();
+        // * check include param with eager-loading
+        if (!empty($request->query('include'))) {
+            $includeData = request()->query('include');
+            $includeArray = explode(',', $includeData);
+            $data = $this->model::with($includeArray);
+        }
+
+        return $data;
+    }
+
     public function hasSort(object $data, bool $reverse = false): object
     {
         $this->validateSort();
+        $model = new $this->model();
 
         $request = request();
         if (!empty($request->query('sort'))) {
@@ -58,27 +74,20 @@ trait ReadDataTrait
             }
         } else {
             if ($reverse === false) {
-                $data = $data->orderBy('created_at', 'desc');
+                if ($model->defaultSortOperator === 'asc') {
+                    $operator = 'asc';
+                } else {
+                    $operator = 'desc';
+                }
+                $data = $data->orderBy($model->defaultSortColumn, $operator);
             } else {
-                $data = $data->orderBy('created_at', 'asc');
+                if ($model->defaultSortOperator === 'asc') {
+                    $operator = 'desc';
+                } else {
+                    $operator = 'asc';
+                }
+                $data = $data->orderBy($model->defaultSortColumn, $operator);
             }
-        }
-
-        return $data;
-    }
-
-    public function hasInclude(object $data): object
-    {
-        $this->validateInclude();
-
-        $request = request();
-        // * check include param with eager-loading
-        if (!empty($request->query('include'))) {
-            // $includeData = request()->query('include');
-            // $includeArray = explode(',', $includeData);
-            // foreach ($includeArray as $includeValue) {
-            //     $data->load($includeValue);
-            // }
         }
 
         return $data;
@@ -92,6 +101,7 @@ trait ReadDataTrait
         Logical Operators
         eq operator (Equals)
         ne operator (Not Equals)
+        not operator (Not Equals)
         gt operator (Greater Than)
         gte operator (Greater Than or Equal)
         lt operator (Less Than)
@@ -104,6 +114,7 @@ trait ReadDataTrait
         $filterRule = [
             'eq',
             'ne',
+            'not',
             'gt',
             'gte',
             'lt',
@@ -126,6 +137,9 @@ trait ReadDataTrait
                         $operatorSymbol = '=';
                         $data = $data->where($column, $operatorSymbol, $value);
                     } elseif ($operator === 'ne') {
+                        $operatorSymbol = '!=';
+                        $data = $data->where($column, $operatorSymbol, $value);
+                    } elseif ($operator === 'not') {
                         $operatorSymbol = '!=';
                         $data = $data->where($column, $operatorSymbol, $value);
                     } elseif ($operator === 'gt') {
@@ -236,7 +250,7 @@ trait ReadDataTrait
 
         $request = request();
         if (empty($request->query('page'))) {
-            return $responseData = $this->collection($data->get(), new $this->transformer());
+            return $this->collection($data->get(), new $this->transformer());
         }
 
         $pageName = null;
@@ -258,7 +272,7 @@ trait ReadDataTrait
             $data = $data->paginate($pageLimit, ['*'], $pageName, $pageOffset);
             $data->appends(request()->except($pageQuery));
 
-            return $responseData = $this->paginate($data, new $this->transformer());
+            return $this->paginate($data, new $this->transformer());
         }
 
         // page-based
@@ -274,7 +288,7 @@ trait ReadDataTrait
             $data = $data->paginate($pageLimit, ['*'], $pageName, $pageOffset);
             $data->appends(request()->except($pageQuery));
 
-            return $responseData = $this->paginate($data, new $this->transformer());
+            return $this->paginate($data, new $this->transformer());
         }
 
         // just limit
@@ -283,7 +297,7 @@ trait ReadDataTrait
 
             $data = $data->limit($pageLimit)->get();
 
-            return $responseData = $this->collection($data, new $this->transformer());
+            return $this->collection($data, new $this->transformer());
         }
 
         if (
@@ -360,7 +374,7 @@ trait ReadDataTrait
                 'total' => $totalCursor,
             ];
 
-            return $responseData = $this->cursorPaginate($data, new $this->transformer(), (object) $dataCursors);
+            return $this->cursorPaginate($data, new $this->transformer(), (object) $dataCursors);
         }
 
         // cursor-based
@@ -437,7 +451,7 @@ trait ReadDataTrait
                 'count' => $pageLimit,
                 'total' => $totalCursor,
             ];
-            return $responseData = $this->cursorPaginate($data, new $this->transformer(), (object) $dataCursors);
+            return $this->cursorPaginate($data, new $this->transformer(), (object) $dataCursors);
         }
     }
 }

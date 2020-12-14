@@ -6,7 +6,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Str;
 use App\Models\Book;
 use App\Transformers\BookTransformer;
 use App\Traits\FractalTrait;
@@ -52,8 +51,8 @@ class BookController extends BaseController
 
         // * Begin query
         $data = new $this->model();
-        $data = $this->hasSort($data);
         $data = $this->hasInclude($data);
+        $data = $this->hasSort($data);
         $data = $this->hasFilter($data);
         $data = $this->hasResponse($data);
 

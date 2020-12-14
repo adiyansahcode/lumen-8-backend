@@ -52,6 +52,14 @@ class Book extends BaseModel
     ];
 
     /**
+     * The default attributes for sorting API.
+     *
+     * @var string
+     */
+    public $defaultSortColumn = 'created_at';
+    public $defaultSortOperator = 'asc';
+
+    /**
      * The attributes for sorting API.
      *
      * @var array
@@ -62,6 +70,25 @@ class Book extends BaseModel
         'isbn',
         'title',
         'publication_date',
+    ];
+
+    /**
+     * The attributes for filtering API.
+     *
+     * @var array
+     */
+    public $filterable = [
+        'created_at',
+        'updated_at',
+        'uuid',
+        'isbn',
+        'title',
+        'publication_date',
+        'weight',
+        'wide',
+        'long',
+        'page',
+        'description',
     ];
 
     public function bookImg(): object
