@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Traits;
 
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
@@ -217,46 +216,6 @@ trait ValidationTrait
                 }
             }
 
-            // $data = array_keys(request()->query('filter'));
-            // foreach ($data as $filterName) {
-            //     if (strpos($filterName, '.') !== false) {
-            //         $filterArray = Str::of($filterName)->explode('.');
-            //         $filterTable = $filterArray[0];
-            //         $filterColumn = $filterArray[1];
-            //         if (Schema::hasTable($filterTable)) {
-            //             if (!Schema::hasColumn($filterTable, Str::snake($filterColumn))) {
-            //                 $errorMsg['errors'][] = [
-            //                     'code' => 400,
-            //                     'source' => ['parameter' => 'filter'],
-            //                     'title' => 'invalid filtering',
-            //                     'detail' => 'filter column not exist',
-            //                 ];
-            //                 $response = response()
-            //                     ->json($errorMsg, 400)
-            //                     ->header('Content-Type', 'application/vnd.api+json')
-            //                     ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
-
-            //                 throw new ValidationException(null, $response);
-            //             }
-            //         }
-            //     } else {
-            //         if (!Schema::hasColumn($tableName, Str::snake($filterName))) {
-            //             $errorMsg['errors'][] = [
-            //                 'code' => 400,
-            //                 'source' => ['parameter' => 'filter'],
-            //                 'title' => 'invalid filtering',
-            //                 'detail' => 'filter column not exist',
-            //             ];
-            //             $response = response()
-            //                 ->json($errorMsg, 400)
-            //                 ->header('Content-Type', 'application/vnd.api+json')
-            //                 ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
-
-            //             throw new ValidationException(null, $response);
-            //         }
-            //     }
-            // }
-
             /*
             Logical Operators
             eq operator (Equals)
@@ -368,6 +327,59 @@ trait ValidationTrait
 
             $response = response()
                 ->json($errorMsg, 400)
+                ->header('Content-Type', 'application/vnd.api+json')
+                ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+            throw new ValidationException(null, $response);
+        }
+    }
+
+    public function validateStore(): void
+    {
+        $request = request();
+
+        // validate data
+        $validator = Validator::make($request->json()->all(), [
+            'data' => [
+                'required',
+                'array',
+            ],
+        ]);
+        if ($validator->fails()) {
+            $errorMsg['errors'][] = [
+                'id' => (int) mt_rand(1000, 9999),
+                'status' => '422' ,
+                'code' => '422' ,
+                'title' => 'invalid request',
+                'detail' => "missing 'data' parameter at request.",
+                'source' => ['pointer' => ''],
+            ];
+
+            $response = response()
+                ->json($errorMsg, 422)
+                ->header('Content-Type', 'application/vnd.api+json')
+                ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+            throw new ValidationException(null, $response);
+        }
+
+        // validate attributes
+        $validator = Validator::make($request->json('data'), [
+            'attributes' => [
+                'required',
+                'array',
+            ],
+        ]);
+        if ($validator->fails()) {
+            $errorMsg['errors'][] = [
+                'id' => (int) mt_rand(1000, 9999),
+                'status' => '422' ,
+                'code' => '422' ,
+                'title' => 'invalid request',
+                'detail' => "missing 'attributes' parameter at request.",
+                'source' => ['pointer' => ''],
+            ];
+
+            $response = response()
+                ->json($errorMsg, 422)
                 ->header('Content-Type', 'application/vnd.api+json')
                 ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
             throw new ValidationException(null, $response);

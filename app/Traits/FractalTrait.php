@@ -36,7 +36,7 @@ trait FractalTrait
         return $manager;
     }
 
-    public function item(EloquentCollection $data, object $transformer): array
+    public function item(object $data, object $transformer): array
     {
         $manager = $this->getFractalManager();
         $resource = new Item($data, $transformer, $transformer->type);

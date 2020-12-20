@@ -31,5 +31,9 @@ $router->group(
             'as' => 'book.index',
             'uses' => 'BookController@index',
         ]);
+        $router->post('/', [
+            'as' => 'book.store',
+            'uses' => 'BookController@store',
+        ]);
     }
 );
