@@ -7,50 +7,65 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
 use App\Models\Book;
 use App\Transformers\BookTransformer;
+use App\Http\Validations\BookStoreValidation;
 use App\Traits\FractalTrait;
-use App\Traits\ValidationTrait;
 use App\Traits\ReadDataTrait;
 use Ramsey\Uuid\Uuid;
 
 class BookController extends BaseController
 {
     use FractalTrait;
-    use ValidationTrait;
     use ReadDataTrait;
+
+    /**
+     * request variable
+     *
+     * @var Request
+     */
+    private $request;
+
+    /**
+     * The name of resources.
+     *
+     * @var string
+     */
+    private $type;
 
     /**
      * The name of the model.
      *
      * @var string
      */
-    public $model = Book::class;
+    private $model;
 
     /**
      * The name of the fractal tranform.
      *
      * @var string
      */
-    public $transformer = BookTransformer::class;
+    private $transformer;
+
+    /**
+     * __construct function
+     */
+    public function __construct()
+    {
+        $this->request = request();
+        $this->type = 'book';
+        $this->model = Book::class;
+        $this->transformer = BookTransformer::class;
+    }
 
     /**
      * API Read Data
      *
-     * @param Request $request
      * @return JsonResponse
      */
-    public function index(Request $request): JsonResponse
+    public function index(): JsonResponse
     {
-        DB::enableQueryLog();
-
-        // * get a request
-        $requestData = $request->all();
-
-        // * validate request
-        $this->validatePaginate();
+        // DB::enableQueryLog();
 
         // * Begin query
         $data = new $this->model();
@@ -69,77 +84,26 @@ class BookController extends BaseController
             ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(): JsonResponse
     {
-        DB::enableQueryLog();
+        // DB::enableQueryLog();
 
-        $this->validateStore();
-
-        // validate attributes
-        $validator = Validator::make($request->json('data.attributes'), [
-            'isbn' => [
-                'required',
-                'string',
-                'max:13',
-                'unique:App\Models\Book,isbn',
-            ],
-            'title' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-            'publicationDate' => [
-                'required',
-                'date',
-                'date_format:Y-m-d',
-            ],
-            'weight' => [
-                'required',
-                'integer',
-            ],
-            'wide' => [
-                'required',
-                'integer',
-            ],
-            'long' => [
-                'required',
-                'integer',
-            ],
-            'page' => [
-                'required',
-                'integer',
-            ],
-            'description' => [
-                'required',
-                'string',
-                'max:200',
-            ],
-        ]);
-        if ($validator->fails()) {
-            $errors = $validator->errors()->toArray();
-            $response = response()
-                ->json($errors, 400)
-                ->header('Content-Type', 'application/vnd.api+json')
-                ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
-
-            throw new ValidationException(null, $response);
-        }
-
-        $uuid = Uuid::uuid4()->toString();
+        // * do validation
+        new BookStoreValidation($this->request, $this->type);
 
         try {
             DB::beginTransaction();
 
             $data = new Book();
-            $data->uuid = $uuid;
-            $data->isbn = $request->json('data.attributes.isbn');
-            $data->title = $request->json('data.attributes.title');
-            $data->publication_date = $request->json('data.attributes.publicationDate');
-            $data->weight = $request->json('data.attributes.weight');
-            $data->wide = $request->json('data.attributes.wide');
-            $data->long = $request->json('data.attributes.long');
-            $data->page = $request->json('data.attributes.page');
-            $data->description = $request->json('data.attributes.description');
+            $data->uuid = Uuid::uuid4()->toString();
+            $data->isbn = $this->request->json('data.attributes.isbn');
+            $data->title = $this->request->json('data.attributes.title');
+            $data->publication_date = $this->request->json('data.attributes.publicationDate');
+            $data->weight = $this->request->json('data.attributes.weight');
+            $data->wide = $this->request->json('data.attributes.wide');
+            $data->long = $this->request->json('data.attributes.long');
+            $data->page = $this->request->json('data.attributes.page');
+            $data->description = $this->request->json('data.attributes.description');
             $data->save();
 
             // Commit Transaction
