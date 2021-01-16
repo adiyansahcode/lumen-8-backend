@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Validator;
-use App\Validators\RestValidator;
+use App\Validators\JsonApiValidator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         Validator::resolver(function ($translator, $data, $rules, $messages) {
-            return new RestValidator($translator, $data, $rules, $messages);
+            return new JsonApiValidator($translator, $data, $rules, $messages);
         });
     }
 }

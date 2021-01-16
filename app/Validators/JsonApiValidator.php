@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\Validator;
 
-class RestValidator extends Validator
+class JsonApiValidator extends Validator
 {
     /**
      * Add an error message to the validator's collection of messages.
@@ -23,12 +23,43 @@ class RestValidator extends Validator
         if (!$this->messages) {
             $this->passes();
         }
-        $message = $this->getMessage($attribute, $rule);
-        $message = $this->makeReplacements($message, $attribute, $rule, $parameters);
+
+        $attribute = str_replace(
+            [$this->dotPlaceholder, '__asterisk__'],
+            ['.', '*'],
+            $attribute
+        );
+
+        if (in_array($rule, $this->excludeRules)) {
+            return $this->excludeAttribute($attribute);
+        }
+
+        $message = $this->makeReplacements(
+            $this->getMessage($attribute, $rule),
+            $attribute,
+            $rule,
+            $parameters
+        );
 
         $ruleName = strtolower(Str::snake($rule));
         $code = $this->ruleToCode($ruleName);
         $title = str_replace('_', ' ', $ruleName);
+
+        $request = request();
+        $method = $request->method();
+        if ($method === 'GET') {
+            $source = [
+                'parameter' => str_replace('.', '/', $attribute)
+            ];
+        } elseif ($method === 'DELETE') {
+            $source = [
+                'parameter' => $attribute
+            ];
+        } else {
+            $source = [
+                'pointer' => '/data/attributes/' . $attribute
+            ];
+        }
 
         $customMessage = new MessageBag();
         $customMessage->merge(
@@ -38,7 +69,7 @@ class RestValidator extends Validator
                 'code' => $code,
                 'title' => $title,
                 'detail' => $message,
-                'source' => ['pointer' => '/data/attributes/' . $attribute],
+                'source' => $source
             ]
         );
         $this->messages->add('errors', $customMessage);
@@ -46,10 +77,67 @@ class RestValidator extends Validator
         $this->failedRules[$attribute][$rule] = $parameters;
     }
 
+    /**
+     * Validate an attribute using a custom rule object.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  \Illuminate\Contracts\Validation\Rule  $rule
+     * @return void
+     */
+    public function validateUsingCustomRule($attribute, $value, $rule)
+    {
+        $attribute = $this->replacePlaceholderInString($attribute);
+
+        $value = is_array($value) ? $this->replacePlaceholders($value) : $value;
+
+        if (! $rule->passes($attribute, $value)) {
+            $this->failedRules[$attribute][get_class($rule)] = [];
+
+            $messages = $rule->message();
+
+            $messages = $messages ? (array) $messages : [get_class($rule)];
+
+            foreach ($messages as $message) {
+                $message = $this->makeReplacements($message, $attribute, get_class($rule), []);
+                $ruleName = strtolower(Str::snake(get_class($rule)));
+                $code = $this->ruleToCode($ruleName);
+                $title = str_replace('_', ' ', $ruleName);
+
+                $request = request();
+                $method = $request->method();
+                if ($method === 'GET') {
+                    $source = [
+                        'parameter' => $attribute
+                    ];
+                } elseif ($method === 'DELETE') {
+                    $source = [
+                        'parameter' => $attribute
+                    ];
+                } else {
+                    $source = [
+                        'pointer' => '/data/attributes/' . $attribute
+                    ];
+                }
+
+                $customMessage = new MessageBag();
+                $customMessage->merge(
+                    [
+                        'id' => (int) mt_rand(1000, 9999),
+                        'status' => '400',
+                        'code' => $code,
+                        'title' => $title,
+                        'detail' => $message,
+                        'source' => $source
+                    ]
+                );
+                $this->messages->add('errors', $customMessage);
+            }
+        }
+    }
+
     private function ruleToCode(string $rule): string
     {
-        // https://github.com/laravel/laravel/blob/master/resources/lang/en/validation.php
-
         $map = [
             'accepted' => '001',
             'active_url' => '002',

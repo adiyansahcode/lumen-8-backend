@@ -22,20 +22,12 @@ trait ValidationTrait
         ]);
 
         if ($validator->fails()) {
-            $errors = $validator->errors();
-            foreach ($errors->all() as $message) {
-                $errorMsg['errors'][] = [
-                    'code' => 400,
-                    'source' => ['parameter' => 'include'],
-                    'title' => 'invalid include relationships',
-                    'detail' => $message,
-                ];
-            }
-
+            $errors = $validator->errors()->toArray();
             $response = response()
-                ->json($errorMsg, 400)
+                ->json($errors, 400)
                 ->header('Content-Type', 'application/vnd.api+json')
                 ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
             throw new ValidationException(null, $response);
         }
 
@@ -48,10 +40,12 @@ trait ValidationTrait
             foreach ($dataArray as $dataValue) {
                 if (!in_array($dataValue, $column)) {
                     $errorMsg['errors'][] = [
-                        'code' => 400,
-                        'source' => ['parameter' => 'include'],
-                        'title' => 'invalid include relationships',
+                        'id' => (int) mt_rand(1000, 9999),
+                        'status' => '400',
+                        'code' => '422',
+                        'title' => 'invalid relationships',
                         'detail' => 'relationships not exist',
+                        'source' => ['parameter' => 'include'],
                     ];
                     $response = response()
                         ->json($errorMsg, 400)
@@ -76,20 +70,12 @@ trait ValidationTrait
         ]);
 
         if ($validator->fails()) {
-            $errors = $validator->errors();
-            foreach ($errors->all() as $message) {
-                $errorMsg['errors'][] = [
-                    'code' => 400,
-                    'source' => ['parameter' => 'sort'],
-                    'title' => 'invalid sorting',
-                    'detail' => $message,
-                ];
-            }
-
+            $errors = $validator->errors()->toArray();
             $response = response()
-                ->json($errorMsg, 400)
+                ->json($errors, 400)
                 ->header('Content-Type', 'application/vnd.api+json')
                 ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
             throw new ValidationException(null, $response);
         }
 
@@ -100,10 +86,12 @@ trait ValidationTrait
             $sortColumn = $model->sortable;
             if (empty($sortColumn)) {
                 $errorMsg['errors'][] = [
-                    'code' => 400,
-                    'source' => ['parameter' => 'sort'],
+                    'id' => (int) mt_rand(1000, 9999),
+                    'status' => '400',
+                    'code' => '422',
                     'title' => 'invalid sorting',
                     'detail' => 'API does not support sorting parameter',
+                    'source' => ['parameter' => 'sort'],
                 ];
                 $response = response()
                     ->json($errorMsg, 400)
@@ -126,10 +114,12 @@ trait ValidationTrait
             foreach ($dataArray as $dataValue) {
                 if (!in_array($dataValue, $column)) {
                     $errorMsg['errors'][] = [
-                        'code' => 400,
-                        'source' => ['parameter' => 'sort'],
+                        'id' => (int) mt_rand(1000, 9999),
+                        'status' => '400',
+                        'code' => '422',
                         'title' => 'invalid sorting',
-                        'detail' => 'sorting column not exist',
+                        'detail' => 'sorting column is invalid',
+                        'source' => ['parameter' => 'sort'],
                     ];
                     $response = response()
                         ->json($errorMsg, 400)
@@ -149,25 +139,17 @@ trait ValidationTrait
         $validator = Validator::make($request->all(), [
             'filter' => [
                 'array',
-                'filled'
+                'filled',
             ],
         ]);
 
         if ($validator->fails()) {
-            $errors = $validator->errors();
-            foreach ($errors->all() as $message) {
-                $errorMsg['errors'][] = [
-                    'code' => 400,
-                    'source' => ['parameter' => 'filter'],
-                    'title' => 'invalid filtering',
-                    'detail' => $message,
-                ];
-            }
-
+            $errors = $validator->errors()->toArray();
             $response = response()
-                ->json($errorMsg, 400)
+                ->json($errors, 400)
                 ->header('Content-Type', 'application/vnd.api+json')
                 ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
             throw new ValidationException(null, $response);
         }
 
@@ -179,10 +161,12 @@ trait ValidationTrait
             $filterColumn = $model->filterable;
             if (empty($filterColumn)) {
                 $errorMsg['errors'][] = [
-                    'code' => 400,
-                    'source' => ['parameter' => 'filter'],
-                    'title' => 'invalid sorting',
+                    'id' => (int) mt_rand(1000, 9999),
+                    'status' => '400',
+                    'code' => '422',
+                    'title' => 'invalid filtering',
                     'detail' => 'API does not support filtering parameter',
+                    'source' => ['parameter' => 'filter'],
                 ];
                 $response = response()
                     ->json($errorMsg, 400)
@@ -202,10 +186,12 @@ trait ValidationTrait
             foreach ($data as $filterName) {
                 if (!in_array($filterName, $column)) {
                     $errorMsg['errors'][] = [
-                        'code' => 400,
-                        'source' => ['parameter' => 'filter'],
+                        'id' => (int) mt_rand(1000, 9999),
+                        'status' => '400',
+                        'code' => '422',
                         'title' => 'invalid filtering',
-                        'detail' => 'filter column not exist',
+                        'detail' => 'filter column is invalid',
+                        'source' => ['parameter' => 'filter'],
                     ];
                     $response = response()
                         ->json($errorMsg, 400)
@@ -216,31 +202,18 @@ trait ValidationTrait
                 }
             }
 
-            /*
-            Logical Operators
-            eq operator (Equals)
-            ne operator (Not Equals)
-            not operator (Not Equals)
-            gt operator (Greater Than)
-            gte operator (Greater Than or Equal)
-            lt operator (Less Than)
-            lte operator (Less Than or Equal)
-            in operator (In)
-            nin operator (Not In)
-            contains function (filters if a string contains another substring)
-            */
-
+            // Logical Operators
             $filterRule = [
-                'eq',
-                'ne',
-                'not',
-                'gt',
-                'gte',
-                'lt',
-                'lte',
-                'in',
-                'nin',
-                'contains',
+                'eq', // operator (Equals)
+                'ne', // operator (Not Equals)
+                'not', // operator (Not Equals)
+                'gt', // operator (Greater Than)
+                'gte', // operator (Greater Than or Equal)
+                'lt', // operator (Less Than)
+                'lte', // operator (Less Than or Equal)
+                'in', // operator (In)
+                'nin', // operator (Not In)
+                'contains', // operator string (filters if a string contains another substring)
             ];
 
             $filterOperator = [];
@@ -252,10 +225,12 @@ trait ValidationTrait
             foreach ($filterOperatorList as $filterOperatorValue) {
                 if (!in_array($filterOperatorValue, $filterRule)) {
                     $errorMsg['errors'][] = [
-                        'code' => 400,
-                        'source' => ['parameter' => 'filter'],
+                        'id' => (int) mt_rand(1000, 9999),
+                        'status' => '400',
+                        'code' => '422',
                         'title' => 'invalid filtering',
                         'detail' => 'filtering operators is invalid',
+                        'source' => ['parameter' => 'filter'],
                     ];
                     $response = response()
                         ->json($errorMsg, 400)
@@ -263,6 +238,32 @@ trait ValidationTrait
                         ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
 
                     throw new ValidationException(null, $response);
+                }
+            }
+
+            $filter = request()->query('filter');
+            foreach ($filter as $filterKey => $filterValue) {
+                $column = Str::snake($filterKey);
+                foreach ($filterValue as $filterKey2 => $filterValue2) {
+                    $operator = $filterKey2;
+                    if (empty($filterValue2)) {
+                        $errorMsg['errors'][] = [
+                            'id' => (int) mt_rand(1000, 9999),
+                            'status' => '400',
+                            'code' => '422',
+                            'title' => 'invalid filtering',
+                            'detail' => 'the filter field must have a value.',
+                            'source' => [
+                                'parameter' => "filter/$filterKey/$operator"
+                            ],
+                        ];
+                        $response = response()
+                            ->json($errorMsg, 400)
+                            ->header('Content-Type', 'application/vnd.api+json')
+                            ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
+                        throw new ValidationException(null, $response);
+                    }
                 }
             }
         }
@@ -315,20 +316,12 @@ trait ValidationTrait
         ]);
 
         if ($validator->fails()) {
-            $errors = $validator->errors();
-            foreach ($errors->all() as $message) {
-                $errorMsg['errors'][] = [
-                    'code' => 400,
-                    'source' => ['parameter' => 'page'],
-                    'title' => 'invalid pagination',
-                    'detail' => $message,
-                ];
-            }
-
+            $errors = $validator->errors()->toArray();
             $response = response()
-                ->json($errorMsg, 400)
+                ->json($errors, 400)
                 ->header('Content-Type', 'application/vnd.api+json')
                 ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
             throw new ValidationException(null, $response);
         }
     }
@@ -347,8 +340,8 @@ trait ValidationTrait
         if ($validator->fails()) {
             $errorMsg['errors'][] = [
                 'id' => (int) mt_rand(1000, 9999),
-                'status' => '422' ,
-                'code' => '422' ,
+                'status' => '422',
+                'code' => '422',
                 'title' => 'invalid request',
                 'detail' => "missing 'data' parameter at request.",
                 'source' => ['pointer' => ''],
@@ -358,6 +351,7 @@ trait ValidationTrait
                 ->json($errorMsg, 422)
                 ->header('Content-Type', 'application/vnd.api+json')
                 ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
             throw new ValidationException(null, $response);
         }
 
@@ -371,8 +365,8 @@ trait ValidationTrait
         if ($validator->fails()) {
             $errorMsg['errors'][] = [
                 'id' => (int) mt_rand(1000, 9999),
-                'status' => '422' ,
-                'code' => '422' ,
+                'status' => '422',
+                'code' => '422',
                 'title' => 'invalid request',
                 'detail' => "missing 'attributes' parameter at request.",
                 'source' => ['pointer' => ''],
@@ -382,6 +376,7 @@ trait ValidationTrait
                 ->json($errorMsg, 422)
                 ->header('Content-Type', 'application/vnd.api+json')
                 ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
             throw new ValidationException(null, $response);
         }
     }

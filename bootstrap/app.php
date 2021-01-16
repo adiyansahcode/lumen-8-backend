@@ -115,4 +115,7 @@ $app->router->group([
     require __DIR__ . '/../routes/web.php';
 });
 
+// set locale languange
+app('translator')->setLocale(env('APP_LOCALE', 'en'));
+
 return $app;
