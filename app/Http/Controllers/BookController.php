@@ -9,7 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use App\Models\Book;
 use App\Transformers\BookTransformer;
-use App\Http\Validations\BookStoreValidation;
+use App\Validations\ValidationInterface;
+use App\Validations\BookStoreValidation;
 use App\Traits\FractalTrait;
 use App\Traits\ReadDataTrait;
 use Ramsey\Uuid\Uuid;
@@ -84,12 +85,13 @@ class BookController extends BaseController
             ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
     }
 
-    public function store(): JsonResponse
+    public function store(ValidationInterface $validation): JsonResponse
     {
         // DB::enableQueryLog();
 
         // * do validation
-        new BookStoreValidation($this->request, $this->type);
+        // new BookStoreValidation($this->request, $this->type);
+        $validation->validate($this->request, $this->type);
 
         try {
             DB::beginTransaction();

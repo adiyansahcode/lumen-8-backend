@@ -1,15 +1,14 @@
 <?php
 
-namespace App\Http\Validations;
+namespace App\Validations;
 
-use App\Http\Controllers\BaseController;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
-class BasePostValidation extends BaseController
+class BookStoreValidation implements ValidationInterface
 {
-    public function __construct(object $request, string $type)
+    public function validate(object $request, string $type)
     {
         // validate data
         $validator = Validator::make($request->json()->all(), [
@@ -81,6 +80,56 @@ class BasePostValidation extends BaseController
             ];
             $response = response()
                 ->json($errorMsg, 409)
+                ->header('Content-Type', 'application/vnd.api+json')
+                ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
+
+            throw new ValidationException(null, $response);
+        }
+
+        // validate attributes json
+        $validator = Validator::make($request->json('data.attributes'), [
+            'isbn' => [
+                'required',
+                'string',
+                'max:13',
+                'unique:App\Models\Book,isbn',
+            ],
+            'title' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+            'publicationDate' => [
+                'required',
+                'date',
+                'date_format:Y-m-d',
+            ],
+            'weight' => [
+                'required',
+                'integer',
+            ],
+            'wide' => [
+                'required',
+                'integer',
+            ],
+            'long' => [
+                'required',
+                'integer',
+            ],
+            'page' => [
+                'required',
+                'integer',
+            ],
+            'description' => [
+                'required',
+                'string',
+                'max:200',
+            ],
+        ]);
+        if ($validator->fails()) {
+            $errors = $validator->errors()->toArray();
+            $response = response()
+                ->json($errors, 400)
                 ->header('Content-Type', 'application/vnd.api+json')
                 ->header('Allow', 'GET,POST,DELETE,OPTIONS,HEAD');
 

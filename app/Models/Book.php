@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Carbon\Carbon;
 
 class Book extends BaseModel
 {
@@ -118,11 +119,11 @@ class Book extends BaseModel
 
     public function getCreatedAtAttribute(string $value): string
     {
-        return date("Y-m-d H:i:s", strtotime($value));
+        return Carbon::parse($value)->format("Y-m-d H:i:s");
     }
 
     public function getUpdatedAtAttribute(string $value): string
     {
-        return date("Y-m-d H:i:s", strtotime($value));
+        return Carbon::parse($value)->format("Y-m-d H:i:s");
     }
 }

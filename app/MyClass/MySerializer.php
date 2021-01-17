@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Serializers;
+namespace App\MyClass;
 
 use League\Fractal\Serializer\JsonApiSerializer;
 use League\Fractal\Pagination\PaginatorInterface;

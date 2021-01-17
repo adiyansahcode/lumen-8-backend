@@ -7,14 +7,12 @@ namespace App\Traits;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator as EloquentPaginator;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use League\Fractal\Manager;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use League\Fractal\Pagination\Cursor;
 use League\Fractal\Resource\Collection;
 use League\Fractal\Resource\Item;
-use League\Fractal\Serializer\JsonApiSerializer;
-use App\Serializers\MySerializer;
+use App\MyClass\MySerializer;
 
 trait FractalTrait
 {
@@ -33,6 +31,7 @@ trait FractalTrait
         if (!empty($request->query('fields'))) {
             $manager->parseFieldsets($request->query('fields'));
         }
+
         return $manager;
     }
 
@@ -40,6 +39,7 @@ trait FractalTrait
     {
         $manager = $this->getFractalManager();
         $resource = new Item($data, $transformer, $transformer->type);
+
         return $manager->createData($resource)->toArray();
     }
 
@@ -47,6 +47,7 @@ trait FractalTrait
     {
         $manager = $this->getFractalManager();
         $resource = new Collection($data, $transformer, $transformer->type);
+
         return $manager->createData($resource)->toArray();
     }
 
@@ -55,6 +56,7 @@ trait FractalTrait
         $manager = $this->getFractalManager();
         $resource = new Collection($data, $transformer, $transformer->type);
         $resource->setPaginator(new IlluminatePaginatorAdapter($data));
+
         return $manager->createData($resource)->toArray();
     }
 
@@ -77,7 +79,7 @@ trait FractalTrait
 
         $linksSelf = null;
         if ($dataCursors->current) {
-            $link = [ "page" => [ "after" => $dataCursors->current]];
+            $link = ["page" => ["after" => $dataCursors->current]];
             $linksSelf = $baseUrl . '/' . $path . '?';
             $linksSelf .= http_build_query($request->except(['page.after', 'page.before']));
             $linksSelf .= '&' . http_build_query($link);
@@ -85,7 +87,7 @@ trait FractalTrait
 
         $linksFirst = null;
         if ($dataCursors->first) {
-            $link = [ "page" => [ "after" => $dataCursors->first]];
+            $link = ["page" => ["after" => $dataCursors->first]];
             $linksFirst = $baseUrl . '/' . $path . '?';
             $linksFirst .= http_build_query($request->except(['page.after', 'page.before']));
             $linksFirst .= '&' . http_build_query($link);
@@ -93,23 +95,23 @@ trait FractalTrait
 
         $linksPrev = null;
         if ($dataCursors->previous) {
-            $link = [ "page" => [ "after" => $dataCursors->previous]];
+            $link = ["page" => ["after" => $dataCursors->previous]];
             $linksPrev = $baseUrl . '/' . $path . '?';
-            $linksPrev .= http_build_query($request->except(['page.after','page.before']));
+            $linksPrev .= http_build_query($request->except(['page.after', 'page.before']));
             $linksPrev .= '&' . http_build_query($link);
         }
 
         $linksNext = null;
         if ($dataCursors->next) {
-            $link = [ "page" => [ "after" => $dataCursors->next]];
+            $link = ["page" => ["after" => $dataCursors->next]];
             $linksNext = $baseUrl . '/' . $path . '?';
-            $linksNext .= http_build_query($request->except(['page.after','page.before']));
+            $linksNext .= http_build_query($request->except(['page.after', 'page.before']));
             $linksNext .= '&' . http_build_query($link);
         }
 
         $linksLast = null;
         if ($dataCursors->last) {
-            $link = [ "page" => [ "after" => $dataCursors->last]];
+            $link = ["page" => ["after" => $dataCursors->last]];
             $linksLast = $baseUrl . '/' . $path . '?';
             $linksLast .= http_build_query($request->except(['page.after', 'page.before']));
             $linksLast .= '&' . http_build_query($link);

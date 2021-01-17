@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Validators;
+namespace App\MyClass;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\Validator;
 
-class JsonApiValidator extends Validator
+class MyValidator extends Validator
 {
     /**
      * Add an error message to the validator's collection of messages.
